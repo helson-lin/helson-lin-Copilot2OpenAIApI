@@ -1,0 +1,63 @@
+# Docker Compose for GitHub Copilot OpenAI Adapter
+version: '3.8'
+
+services:
+  githubcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: githubcp-adapter:latest
+    container_name: githubcp-adapter
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Server configuration
+      - HOST=0.0.0.0
+      - PORT=8000
+      - WORKERS=4
+      
+      # Performance tuning
+      - HTTP_MAX_CONNECTIONS=100
+      - HTTP_MAX_KEEPALIVE=20
+      - HTTP_TIMEOUT=120
+      - MAX_CLIENTS_CACHE=1000
+      
+      # Rate limiting
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=60
+      - RATE_LIMIT_WINDOW=60
+      
+      # Cache
+      - MODEL_CACHE_TTL=3600
+      
+      # Optional: Pre-configured GitHub Token
+      # - GITHUB_TOKEN=${GITHUB_TOKEN}
+      
+      # Optional: Custom OAuth Client ID
+      # - GITHUB_OAUTH_CLIENT_ID=${GITHUB_OAUTH_CLIENT_ID}
+    
+    volumes:
+      # Persist token storage
+      - githubcp-data:/app/data
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5).raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Resource limits (optional, uncomment if needed)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 1G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 256M
+
+volumes:
+  githubcp-data:
+    driver: local

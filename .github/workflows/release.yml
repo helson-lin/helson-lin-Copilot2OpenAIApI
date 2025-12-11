@@ -1,0 +1,65 @@
+# GitHub Actions - Release
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" HEAD)
+          fi
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## 🚀 GitHub Copilot OpenAI Adapter ${{ github.ref_name }}
+            
+            ### Docker Image
+            ```bash
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+            
+            ### Quick Start
+            ```bash
+            docker run -p 8000:8000 ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+            
+            Then visit http://localhost:8000/auth/device to authenticate.
+            
+            ### Changes
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ### Full Changelog
+            https://github.com/${{ github.repository }}/compare/${{ github.ref_name }}...HEAD
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true

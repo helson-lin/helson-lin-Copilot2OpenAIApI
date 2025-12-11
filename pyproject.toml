@@ -1,0 +1,18 @@
+[project]
+name = "githubcp"
+version = "0.1.0"
+description = "GitHub Copilot to OpenAI API Adapter - Convert GitHub Copilot API to OpenAI-compatible format for third-party clients"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "azure-identity",
+    "openai",
+    "python-dotenv",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "httpx[http2]>=0.25.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+githubcp-server = "server:main"
